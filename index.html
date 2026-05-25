@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OnChain Camels — 5,000 Fully On-Chain Pixel Camels on Ethereum</title>
+<meta name="description" content="OnChain Camels is a collection of 5,000 fully on-chain generative pixel camels living on Ethereum mainnet. No IPFS. No servers. Forever on-chain.">
+<meta property="og:title" content="OnChain Camels">
+<meta property="og:description" content="5,000 fully on-chain generative pixel camels on Ethereum.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐪</text></svg>">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0a0908;
+  --surface: #141210;
+  --surface-2: #1c1a17;
+  --border: #2a2724;
+  --gold: #d4a017;
+  --gold-bright: #f4c430;
+  --sand: #e8d4a0;
+  --text: #f0ead6;
+  --muted: #9b8f80;
+  --success: #5fb878;
+  --danger: #d65a5a;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+.mono { font-family: 'JetBrains Mono', 'Courier New', monospace; }
+
+/* NAV */
+nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 32px;
+  background: rgba(10,9,8,0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--gold), var(--gold-bright));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.nav-links a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+.nav-links a:hover { color: var(--text); }
+#connectBtn {
+  background: var(--gold);
+  color: #0a0908;
+  border: none;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+#connectBtn:hover { background: var(--gold-bright); }
+#walletPill {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 13px;
+}
+.wallet-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--success);
+  border-radius: 50%;
+}
+
+/* HERO */
+.hero {
+  position: relative;
+  padding: 100px 24px 80px;
+  text-align: center;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 800px; height: 400px;
+  background: radial-gradient(ellipse, rgba(212,160,23,0.15), transparent 70%);
+  pointer-events: none;
+}
+.hero-content {
+  position: relative;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(212,160,23,0.1);
+  border: 1px solid rgba(212,160,23,0.3);
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--gold-bright);
+  margin-bottom: 24px;
+  font-weight: 500;
+}
+.hero h1 {
+  font-size: clamp(48px, 9vw, 96px);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, var(--text) 0%, var(--sand) 50%, var(--gold) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-sub {
+  font-size: clamp(16px, 2vw, 20px);
+  color: var(--muted);
+  max-width: 580px;
+  margin: 0 auto 40px;
+  line-height: 1.6;
+}
+.hero-cta {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 60px;
+}
+.btn {
+  padding: 14px 28px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+.btn-primary {
+  background: var(--gold);
+  color: #0a0908;
+}
+.btn-primary:hover { background: var(--gold-bright); transform: translateY(-2px); }
+.btn-secondary {
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { border-color: var(--gold); }
+
+/* PREVIEWS */
+.previews {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.preview-card {
+  width: 140px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+.preview-card:hover {
+  border-color: var(--gold);
+  transform: translateY(-4px);
+}
+.preview-card svg { width: 100%; display: block; background: #000; }
+.preview-card .pc-info {
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+}
+.preview-card .pc-info .pc-name { color: var(--gold); font-weight: 600; }
+
+/* STATS BAR */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  margin: 60px 24px;
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.stat-item {
+  background: var(--surface);
+  padding: 28px 20px;
+  text-align: center;
+}
+.stat-value {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--gold);
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+}
+.stat-label {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 500;
+}
+
+/* SECTION */
+.section {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 80px 24px;
+}
+.section-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+.section-tag {
+  display: inline-block;
+  font-size: 12px;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+.section-title {
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+.section-desc {
+  color: var(--muted);
+  max-width: 560px;
+  margin: 0 auto;
+  font-size: 16px;
+}
+
+/* MINT */
+.mint-card {
+  max-width: 480px;
+  margin: 0 auto;
+  background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 32px;
+}
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg);
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: 28px;
+}
+.tab {
+  flex: 1;
+  padding: 12px;
+  text-align: center;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.tab.active {
+  background: var(--gold);
+  color: #0a0908;
+}
+.mint-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+.mint-row:last-of-type { border-bottom: none; }
+.mint-row .label { color: var(--muted); }
+.mint-row .value { font-weight: 600; }
+.mint-row .value.gold { color: var(--gold); }
+.progress-wrap {
+  margin: 20px 0;
+}
+.progress-bar {
+  background: var(--bg);
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--gold-bright));
+  border-radius: 999px;
+  width: 0%;
+  transition: width 0.6s;
+}
+.progress-text {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--muted);
+}
+#qtyWrap {
+  display: none;
+  align-items: center;
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 8px;
+  margin: 20px 0;
+}
+#qtyWrap button {
+  width: 40px;
+  height: 40px;
+  background: var(--surface);
+  border: none;
+  color: var(--text);
+  font-size: 20px;
+  cursor: pointer;
+  border-radius: 8px;
+  font-weight: 600;
+}
+#qtyWrap button:hover { background: var(--border); }
+#qty {
+  flex: 1;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--gold);
+}
+#mintBtn {
+  width: 100%;
+  padding: 16px;
+  background: var(--gold);
+  color: #0a0908;
+  border: none;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 12px;
+  margin-top: 8px;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+#mintBtn:hover:not(:disabled) {
+  background: var(--gold-bright);
+  transform: translateY(-1px);
+}
+#mintBtn:disabled {
+  background: var(--border);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+#mintStatus {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+  min-height: 20px;
+}
+#mintStatus.success { color: var(--success); }
+#mintStatus.error { color: var(--danger); }
+
+/* TRAITS */
+.traits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+.trait-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.2s;
+}
+.trait-card:hover {
+  border-color: var(--gold);
+  transform: translateY(-2px);
+}
+.trait-icon {
+  font-size: 28px;
+  margin-bottom: 12px;
+}
+.trait-card h4 {
+  font-size: 15px;
+  margin-bottom: 6px;
+  color: var(--gold);
+}
+.trait-card .count {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.trait-card p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* CONTRACT */
+.contract-card {
+  max-width: 640px;
+  margin: 0 auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+}
+.addr-box {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  color: var(--gold);
+  word-break: break-all;
+  margin: 16px 0;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.addr-box:hover { border-color: var(--gold); }
+.contract-links {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+/* FAQ */
+.faq-grid { max-width: 720px; margin: 0 auto; }
+.faq-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.faq-q {
+  padding: 18px 24px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  font-size: 15px;
+}
+.faq-q:hover { color: var(--gold); }
+.faq-a {
+  padding: 0 24px 0;
+  max-height: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+  transition: all 0.3s;
+}
+.faq-item.open .faq-a { max-height: 200px; padding: 0 24px 18px; }
+.faq-toggle { color: var(--gold); font-size: 20px; }
+
+/* FOOTER */
+footer {
+  text-align: center;
+  padding: 40px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 13px;
+}
+footer .heart { color: var(--gold); }
+
+/* TOAST */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(150px);
+  background: var(--surface);
+  border: 1px solid var(--gold);
+  color: var(--text);
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-size: 14px;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 999;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 600px) {
+  nav { padding: 14px 20px; }
+  .nav-links { gap: 16px; }
+  .nav-links a:not(.btn) { display: none; }
+  .hero { padding: 60px 20px 40px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">
+    <div class="logo-icon">🐪</div>
+    <span>OnChain Camels</span>
+  </div>
+  <div class="nav-links">
+    <a href="#mint">Mint</a>
+    <a href="#traits">Traits</a>
+    <a href="#faq">FAQ</a>
+    <div id="walletPill"><span class="wallet-dot"></span><span id="walletAddr"></span></div>
+    <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span>✦</span>
+      <span>Live on Ethereum Mainnet</span>
+    </div>
+    <h1>5,000 Camels<br>Fully On-Chain</h1>
+    <p class="hero-sub">
+      Generative pixel camels living entirely on Ethereum.<br>
+      No IPFS. No servers. No middlemen. Just pure on-chain art.
+    </p>
+    <div class="hero-cta">
+      <a href="#mint" class="btn btn-primary">Mint Now →</a>
+      <a href="https://opensea.io/collection/onchain-camels-94990885" target="_blank" class="btn btn-secondary">View on OpenSea</a>
+    </div>
+    <div class="previews" id="previews"></div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats-bar">
+  <div class="stat-item">
+    <div class="stat-value">5,000</div>
+    <div class="stat-label">Total Supply</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value">4,500</div>
+    <div class="stat-label">Free Mints</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value">0.00015Ξ</div>
+    <div class="stat-label">Paid Price</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-value">5%</div>
+    <div class="stat-label">Royalty</div>
+  </div>
+</div>
+
+<!-- MINT SECTION -->
+<section class="section" id="mint">
+  <div class="section-header">
+    <div class="section-tag">Mint</div>
+    <h2 class="section-title">Claim Your Camel</h2>
+    <p class="section-desc">Free mint available (1 per wallet) or paid mint at 0.00015 ETH each</p>
+  </div>
+
+  <div class="mint-card">
+    <div class="tabs">
+      <button class="tab active" onclick="setTab('free')">Free Mint</button>
+      <button class="tab" onclick="setTab('paid')">Paid Mint</button>
+    </div>
+
+    <div class="mint-row">
+      <span class="label">Price</span>
+      <span class="value gold" id="priceText">FREE</span>
+    </div>
+    <div class="mint-row">
+      <span class="label">Network</span>
+      <span class="value">Ethereum</span>
+    </div>
+    <div class="mint-row">
+      <span class="label">Minted</span>
+      <span class="value" id="mintedText">Loading...</span>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-text">
+        <span>0</span>
+        <span>5,000</span>
+      </div>
+    </div>
+
+    <div id="qtyWrap">
+      <button onclick="changeQty(-1)">−</button>
+      <div id="qty">1</div>
+      <button onclick="changeQty(1)">+</button>
+    </div>
+
+    <button id="mintBtn" onclick="doMint()">Connect Wallet to Mint</button>
+    <div id="mintStatus"></div>
+  </div>
+</section>
+
+<!-- TRAITS -->
+<section class="section" id="traits">
+  <div class="section-header">
+    <div class="section-tag">Properties</div>
+    <h2 class="section-title">Traits & Rarity</h2>
+    <p class="section-desc">Every camel is unique. 5 trait categories with up to 8 variations each.</p>
+  </div>
+
+  <div class="traits-grid">
+    <div class="trait-card">
+      <div class="trait-icon">🎨</div>
+      <h4>Body Color</h4>
+      <div class="count">8 Variations</div>
+      <p>Sandy, Azure, Obsidian, Crimson, Jade, Royal, Coral, Gold</p>
+    </div>
+    <div class="trait-card">
+      <div class="trait-icon">🌅</div>
+      <h4>Background</h4>
+      <div class="count">8 Variations</div>
+      <p>Desert, Sunset, Night, Dawn, Mirage, Oasis, Void, Cosmic</p>
+    </div>
+    <div class="trait-card">
+      <div class="trait-icon">👑</div>
+      <h4>Accessory</h4>
+      <div class="count">7 Variations</div>
+      <p>Crown, Bandana, Glasses, Cigar, Halo, Horns, None</p>
+    </div>
+    <div class="trait-card">
+      <div class="trait-icon">😊</div>
+      <h4>Mood</h4>
+      <div class="count">5 Variations</div>
+      <p>Stoic, Happy, Fierce, Sleepy, Wild</p>
+    </div>
+    <div class="trait-card">
+      <div class="trait-icon">✨</div>
+      <h4>Aura</h4>
+      <div class="count">5 Variations</div>
+      <p>None, Stars, Sparkles, Lightning, Fire</p>
+    </div>
+  </div>
+</section>
+
+<!-- CONTRACT -->
+<section class="section">
+  <div class="section-header">
+    <div class="section-tag">Smart Contract</div>
+    <h2 class="section-title">Verified on Etherscan</h2>
+    <p class="section-desc">100% on-chain. Source code is public and verified.</p>
+  </div>
+
+  <div class="contract-card">
+    <p style="color:var(--muted);font-size:13px;">Contract Address</p>
+    <div class="addr-box mono" onclick="copyAddr()">0x781eEB6F5339BEc6090498E3De9181877b423ADb</div>
+    <div class="contract-links">
+      <a href="https://etherscan.io/address/0x781eEB6F5339BEc6090498E3De9181877b423ADb" target="_blank" class="btn btn-secondary">Etherscan</a>
+      <a href="https://opensea.io/collection/onchain-camels-94990885" target="_blank" class="btn btn-secondary">OpenSea</a>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section" id="faq">
+  <div class="section-header">
+    <div class="section-tag">FAQ</div>
+    <h2 class="section-title">Common Questions</h2>
+  </div>
+
+  <div class="faq-grid">
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span>What does "fully on-chain" mean?</span>
+        <span class="faq-toggle">+</span>
+      </div>
+      <div class="faq-a">
+        Every camel image is generated by the smart contract itself. No external servers, no IPFS, no off-chain dependencies. As long as Ethereum exists, your camel exists.
+      </div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span>How much does it cost?</span>
+        <span class="faq-toggle">+</span>
+      </div>
+      <div class="faq-a">
+        Free mint: 4,500 camels available, 1 per wallet. Just pay gas. Paid mint: 0.00015 ETH per camel, up to 25 per wallet.
+      </div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span>How many can I mint?</span>
+        <span class="faq-toggle">+</span>
+      </div>
+      <div class="faq-a">
+        1 free mint per wallet. After that, you can mint up to 25 paid camels per wallet.
+      </div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span>What's the royalty?</span>
+        <span class="faq-toggle">+</span>
+      </div>
+      <div class="faq-a">
+        5% on secondary sales (ERC-2981 standard). Supported by major marketplaces.
+      </div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        <span>Which wallets are supported?</span>
+        <span class="faq-toggle">+</span>
+      </div>
+      <div class="faq-a">
+        Any Ethereum wallet works — MetaMask, Rainbow, Coinbase Wallet, WalletConnect, etc.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p>OnChain Camels © 2025 — Built with <span class="heart">♥</span> for the Ethereum community</p>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CONTRACT = '0x781eEB6F5339BEc6090498E3De9181877b423ADb';
+const RPC = 'https://eth-mainnet.g.alchemy.com/v2/tXLrlsW4ZAIWwYOBdn63g';
+const ABI = [
+  'function freemint() external',
+  'function mint(uint256 qty) external payable',
+  'function totalSupply() view returns (uint256)',
+  'function freeRemaining() view returns (uint256)',
+  'function freeMinted(address) view returns (bool)',
+  'function mintedBy(address) view returns (uint256)'
+];
+
+let provider, signer, contract, walletAddress;
+let currentTab = 'free';
+let qty = 1;
+
+const BC = ["#D4870A","#5B9BD5","#2D2D2D","#8B3A00","#2A7A4A","#5A2A8A","#E05A5A","#C8A020"];
+const BD = ["#A05C00","#2E6DA4","#111111","#5A1A00","#1A4A2A","#3A1A6A","#A03030","#886800"];
+const BGC = ["#F4D03F","#E67E22","#1A1A2E","#F8B4C8","#C39BD3","#73C6B6","#0A0A0A","#4A148C"];
+const GND = ["#E8C030","#D35400","#16213E","#E89AB0","#A569BD","#48C9B0","#2A2A2A","#311B92"];
+const BNAME = ["Sandy","Azure","Obsidian","Crimson","Jade","Royal","Coral","Gold"];
+
+function rng(id, salt) {
+  let h = (id * 2654435761 + salt * 7919) >>> 0;
+  h = ((h ^ (h >>> 16)) * 2246822507) >>> 0;
+  h = ((h ^ (h >>> 13)) * 3266489909) >>> 0;
+  return (h ^ (h >>> 16)) >>> 0;
+}
+
+function genSvg(id) {
+  const bi = rng(id, 1) % 8;
+  const bgi = rng(id, 2) % 8;
+  const acci = rng(id, 3) % 7;
+  const mi = rng(id, 5) % 5;
+  const ai = rng(id, 6) % 5;
+  const bc = BC[bi], bd = BD[bi], bgc = BGC[bgi], gnd = GND[bgi];
+
+  let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" shape-rendering="crispEdges">`;
+  s += `<rect width="240" height="240" fill="${bgc}"/><rect y="170" width="240" height="70" fill="${gnd}"/>`;
+  if (ai===1) s+=`<rect x="30" y="20" width="6" height="6" fill="#FFD700"/><rect x="150" y="30" width="6" height="6" fill="#FFD700"/><rect x="200" y="20" width="6" height="6" fill="#FFD700"/>`;
+  if (ai===2) s+=`<rect x="20" y="10" width="4" height="4" fill="#FFF"/><rect x="110" y="10" width="4" height="4" fill="#FFF"/><rect x="170" y="20" width="4" height="4" fill="#FFF"/>`;
+  if (ai===3) s+=`<rect x="20" y="20" width="6" height="20" fill="#FFFF00"/><rect x="200" y="40" width="6" height="20" fill="#FFFF00"/>`;
+  if (ai===4) s+=`<rect x="30" y="170" width="8" height="8" fill="#FF6600"/><rect x="200" y="170" width="8" height="8" fill="#FF6600"/>`;
+  s += `<rect x="20" y="110" width="160" height="60" fill="${bc}"/>`;
+  s += `<rect x="20" y="110" width="160" height="10" fill="${bd}"/>`;
+  s += `<rect x="40" y="90" width="50" height="20" fill="${bd}"/>`;
+  s += `<rect x="30" y="170" width="10" height="40" fill="${bd}"/>`;
+  s += `<rect x="60" y="170" width="10" height="40" fill="${bd}"/>`;
+  s += `<rect x="130" y="170" width="10" height="40" fill="${bd}"/>`;
+  s += `<rect x="160" y="170" width="10" height="40" fill="${bd}"/>`;
+  s += `<rect x="100" y="20" width="40" height="80" fill="${bc}"/>`;
+  s += `<rect x="100" y="30" width="40" height="10" fill="${bd}"/>`;
+  s += `<rect x="120" y="40" width="10" height="10" fill="#000"/>`;
+  if (mi===1) s+=`<rect x="110" y="60" width="30" height="10" fill="#000"/>`;
+  if (mi===2) s+=`<rect x="100" y="60" width="40" height="10" fill="#F00"/>`;
+  if (mi===3) s+=`<rect x="110" y="40" width="30" height="5" fill="#000"/>`;
+  if (mi===4) s+=`<rect x="110" y="40" width="10" height="10" fill="#F00"/><rect x="130" y="40" width="10" height="10" fill="#F00"/>`;
+  if (acci===1) s+=`<rect x="100" y="10" width="40" height="10" fill="#FFD700"/><rect x="100" y="0" width="10" height="10" fill="#FFD700"/><rect x="120" y="0" width="10" height="10" fill="#FFD700"/><rect x="130" y="0" width="10" height="10" fill="#FFD700"/>`;
+  if (acci===2) s+=`<rect x="100" y="30" width="40" height="10" fill="#FF0000"/>`;
+  if (acci===3) s+=`<rect x="105" y="40" width="12" height="8" fill="#000"/><rect x="123" y="40" width="12" height="8" fill="#000"/>`;
+  if (acci===4) s+=`<rect x="140" y="60" width="30" height="6" fill="#5A3010"/><rect x="170" y="60" width="6" height="6" fill="#FF6600"/>`;
+  if (acci===5) s+=`<rect x="95" y="0" width="50" height="5" fill="#FFFF00"/>`;
+  if (acci===6) s+=`<rect x="100" y="10" width="6" height="15" fill="${bd}"/><rect x="134" y="10" width="6" height="15" fill="${bd}"/>`;
+  s += `</svg>`;
+  return { svg: s, name: BNAME[bi] };
+}
+
+// Generate previews
+const previewIds = [1, 7, 13, 21, 33];
+const previewsEl = document.getElementById('previews');
+previewIds.forEach(id => {
+  const c = genSvg(id);
+  const div = document.createElement('div');
+  div.className = 'preview-card';
+  div.innerHTML = `${c.svg}<div class="pc-info"><span class="pc-name">${c.name}</span><span class="mono">#${String(id).padStart(4,'0')}</span></div>`;
+  previewsEl.appendChild(div);
+});
+
+async function connectWallet() {
+  if (!window.ethereum) { showToast('Please install MetaMask or another Ethereum wallet'); return; }
+  try {
+    const p = new ethers.BrowserProvider(window.ethereum);
+    await p.send('eth_requestAccounts', []);
+    provider = p;
+    signer = await p.getSigner();
+    walletAddress = await signer.getAddress();
+    contract = new ethers.Contract(CONTRACT, ABI, signer);
+
+    document.getElementById('walletPill').style.display = 'flex';
+    document.getElementById('walletAddr').textContent = walletAddress.slice(0,6) + '...' + walletAddress.slice(-4);
+    document.getElementById('connectBtn').style.display = 'none';
+    document.getElementById('mintBtn').textContent = currentTab === 'free' ? 'Free Mint' : 'Mint Now';
+
+    await loadStats();
+    showToast('Wallet connected!');
+  } catch(e) {
+    showToast('Connection cancelled');
+  }
+}
+
+async function loadStats() {
+  try {
+    const p = new ethers.JsonRpcProvider(RPC);
+    const c = new ethers.Contract(CONTRACT, ABI, p);
+    const total = await c.totalSupply();
+    document.getElementById('mintedText').textContent = `${total.toString()} / 5,000`;
+    const pct = (Number(total) / 5000) * 100;
+    document.getElementById('progressFill').style.width = pct + '%';
+  } catch(e) {
+    document.getElementById('mintedText').textContent = '— / 5,000';
+  }
+}
+
+function setTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='free')||(i===1&&tab==='paid')));
+  document.getElementById('priceText').textContent = tab === 'free' ? 'FREE' : '0.00015 ETH';
+  document.getElementById('qtyWrap').style.display = tab === 'paid' ? 'flex' : 'none';
+  if (walletAddress) document.getElementById('mintBtn').textContent = tab === 'free' ? 'Free Mint' : 'Mint Now';
+}
+
+function changeQty(d) {
+  qty = Math.max(1, Math.min(25, qty + d));
+  document.getElementById('qty').textContent = qty;
+}
+
+async function doMint() {
+  if (!walletAddress) { connectWallet(); return; }
+  const btn = document.getElementById('mintBtn');
+  const status = document.getElementById('mintStatus');
+  btn.disabled = true;
+  status.className = '';
+
+  try {
+    if (currentTab === 'free') {
+      status.textContent = 'Please confirm in your wallet...';
+      const tx = await contract.freemint();
+      status.textContent = 'Transaction pending...';
+      await tx.wait();
+      status.textContent = '✓ Mint successful! Check OpenSea.';
+      status.className = 'success';
+      showToast('🐪 Camel minted!');
+    } else {
+      status.textContent = `Minting ${qty} camel${qty>1?'s':''}...`;
+      const price = ethers.parseEther((0.00015 * qty).toFixed(6));
+      const tx = await contract.mint(qty, { value: price });
+      status.textContent = 'Transaction pending...';
+      await tx.wait();
+      status.textContent = `✓ Successfully minted ${qty} camel${qty>1?'s':''}!`;
+      status.className = 'success';
+      showToast(`🐪 Minted ${qty} camel${qty>1?'s':''}!`);
+    }
+    await loadStats();
+  } catch(e) {
+    let msg = e.reason || e.message || 'Transaction failed';
+    if (msg.includes('user rejected')) msg = 'Transaction cancelled';
+    if (msg.includes('AlreadyFreeMinted')) msg = 'You already used your free mint';
+    if (msg.includes('FreeSoldOut')) msg = 'Free mint is sold out';
+    if (msg.includes('SoldOut')) msg = 'Collection sold out';
+    status.textContent = '✕ ' + msg;
+    status.className = 'error';
+  }
+  btn.disabled = false;
+}
+
+function toggleFaq(el) {
+  const item = el.parentElement;
+  const wasOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+  if (!wasOpen) {
+    item.classList.add('open');
+    el.querySelector('.faq-toggle').textContent = '−';
+  }
+  document.querySelectorAll('.faq-item:not(.open) .faq-toggle').forEach(t => t.textContent = '+');
+}
+
+function copyAddr() {
+  navigator.clipboard.writeText(CONTRACT);
+  showToast('Contract address copied!');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+loadStats();
+setInterval(loadStats, 30000);
+</script>
+</body>
+</html>
